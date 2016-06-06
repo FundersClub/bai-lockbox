@@ -14,7 +14,7 @@ setup(
     test_suite='nose.collector',
     tests_require=['nose', 'coverage'],
     include_package_data=True,
-    license='LGPLv3',
+    license='Apache License 2.0',
     description='A library for parsing files in the BAI lockbox format.',
     url='https://www.github.com/FundersClub/bai-lockbox',
     author='Jon Friedman / FundersClub Inc.',
@@ -25,8 +25,8 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
-        'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
+        'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
-    'Intended Audience :: Financial and Insurance Industry'
+        'Intended Audience :: Financial and Insurance Industry'
     ],
 )
