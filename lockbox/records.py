@@ -16,8 +16,15 @@
 
 import datetime
 import re
+import six
 
 from .exceptions import LockboxDefinitionError, LockboxParseError
+
+
+class LockboxFieldType(object):
+    Numeric = 'numeric'
+    Alphanumeric = 'alphanumeric'
+    Blank = 'blank'
 
 
 class LockboxBaseRecord(object):
@@ -30,11 +37,12 @@ class LockboxBaseRecord(object):
       ...
     }
 
-    Valid types: 'alphanumeric', 'numeric', 'blank'
+    Valid types are listed inside the LockboxFieldType class.
 
     Note: The record type which is determined by first character of a
     line is defined by setting MAX_RECORD_LENGTH in a derrived class
     rather than by adding it to the 'fields' field.
+
     '''
 
     MAX_RECORD_LENGTH = 104
@@ -56,7 +64,7 @@ class LockboxBaseRecord(object):
             # we can only parse if there are actually fields defined
             self.fields['record_type'] = {
                 'location': (0,1),
-                'type': 'numeric',
+                'type':  LockboxFieldType.Numeric,
             }
             self._parse()
 
@@ -67,7 +75,7 @@ class LockboxBaseRecord(object):
             # has already been performed by the regexps in _parse(),
             # so at this point we just create any missing fields by
             # doing self.my_field = self._my_field_raw
-            for field_name, field_def in self.fields.items():
+            for field_name, field_def in six.iteritems(self.fields):
                 if hasattr(self, field_name):
                     continue
 
@@ -75,14 +83,14 @@ class LockboxBaseRecord(object):
 
                 raw_field_val = (
                     None
-                    if field_def['type'] == 'blank'
+                    if field_def['type'] ==  LockboxFieldType.Blank
                     else getattr(self, raw_field_name, None)
                 )
 
                 setattr(self, field_name, raw_field_val)
 
     def _parse(self):
-        for field_name, field_def in self.fields.items():
+        for field_name, field_def in six.iteritems(self.fields):
             raw_field_name = '_{}_raw'.format(field_name)
             if hasattr(self, field_name):
                 raise AttributeError(
@@ -91,15 +99,14 @@ class LockboxBaseRecord(object):
                     )
                 )
 
-            start_col = field_def['location'][0]
-            end_col = field_def['location'][1]
+            start_col, end_col = field_def['location']
             raw_field = self.raw_record_text[start_col:end_col]
 
-            if field_def['type'] == 'alphanumeric':
+            if field_def['type'] ==  LockboxFieldType.Alphanumeric:
                 patt = re.compile(r'^[ A-Z0-9]+$')
-            elif field_def['type'] == 'numeric':
+            elif field_def['type'] ==  LockboxFieldType.Numeric:
                 patt = re.compile(r'^[0-9]+$')
-            elif field_def['type'] == 'blank':
+            elif field_def['type'] ==  LockboxFieldType.Blank:
                 patt = re.compile(r'^\s*$')
             else:
                 raise LockboxDefinitionError(
@@ -186,12 +193,12 @@ class LockboxImmediateAddressHeader(LockboxBaseRecord):
     RECORD_TYPE_NUM = 1
 
     fields = {
-        'priority_code': { 'location': (1, 3), 'type': 'numeric' },
-        'destination_id': { 'location': (3, 13), 'type': 'alphanumeric' },
-        'originating_trn': { 'location': (13, 23), 'type': 'numeric' },
-        'processing_date': { 'location': (23, 29), 'type': 'numeric' },
-        'processing_time': { 'location': (29, 33), 'type': 'numeric' },
-        'filler': {'location': (33, 104), 'type': 'blank' },
+        'priority_code': { 'location': (1, 3), 'type':  LockboxFieldType.Numeric },
+        'destination_id': { 'location': (3, 13), 'type':  LockboxFieldType.Alphanumeric },
+        'originating_trn': { 'location': (13, 23), 'type':  LockboxFieldType.Numeric },
+        'processing_date': { 'location': (23, 29), 'type':  LockboxFieldType.Numeric },
+        'processing_time': { 'location': (29, 33), 'type':  LockboxFieldType.Numeric },
+        'filler': {'location': (33, 104), 'type':  LockboxFieldType.Blank },
     }
 
     def validate(self):
@@ -205,14 +212,14 @@ class LockboxServiceRecord(LockboxBaseRecord):
     fields = {
         'ultimate_dest_and_origin': {
             'location': (1, 21),
-            'type': 'alphanumeric',
+            'type':  LockboxFieldType.Alphanumeric,
         },
-        'ref_code':  {'location': (21, 31), 'type': 'numeric'},
-        'service_type': {'location': (31, 34), 'type': 'numeric'},
-        'record_size': {'location': (34, 37), 'type': 'numeric'},
-        'blocking_factor': {'location': (37, 41), 'type': 'numeric'},
-        'format_code': {'location': (41,42), 'type': 'numeric'},
-        'filler': {'location': (42, 104), 'type': 'blank'},
+        'ref_code':  {'location': (21, 31), 'type':  LockboxFieldType.Numeric},
+        'service_type': {'location': (31, 34), 'type':  LockboxFieldType.Numeric},
+        'record_size': {'location': (34, 37), 'type':  LockboxFieldType.Numeric},
+        'blocking_factor': {'location': (37, 41), 'type':  LockboxFieldType.Numeric},
+        'format_code': {'location': (41,42), 'type':  LockboxFieldType.Numeric},
+        'filler': {'location': (42, 104), 'type':  LockboxFieldType.Blank},
     }
 
 
@@ -220,15 +227,15 @@ class LockboxDetailHeader(LockboxBaseRecord):
     RECORD_TYPE_NUM = 5
 
     fields = {
-        'batch_number':  { 'location': (1, 4), 'type': 'numeric' },
-        'ref_code':  { 'location': (4, 7, ), 'type': 'numeric' },
-        'lockbox_number':  { 'location': (7, 14), 'type': 'numeric' },
-        'deposit_date':  { 'location': (14, 20), 'type': 'numeric' },
+        'batch_number':  { 'location': (1, 4), 'type':  LockboxFieldType.Numeric },
+        'ref_code':  { 'location': (4, 7, ), 'type':  LockboxFieldType.Numeric },
+        'lockbox_number':  { 'location': (7, 14), 'type':  LockboxFieldType.Numeric },
+        'deposit_date':  { 'location': (14, 20), 'type':  LockboxFieldType.Numeric },
         'ultimate_dest_and_origin':  {
             'location': (20, 40),
-            'type': 'alphanumeric',
+            'type':  LockboxFieldType.Alphanumeric,
         },
-        'filler': {'location': (40, 104), 'type': 'blank' },
+        'filler': {'location': (40, 104), 'type':  LockboxFieldType.Blank },
     }
 
     def validate(self):
@@ -239,16 +246,16 @@ class LockboxDetailRecord(LockboxBaseRecord):
     RECORD_TYPE_NUM = 6
 
     fields = {
-        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
-        'item_number': { 'location': (4, 7), 'type': 'numeric' },
-        'check_amount': { 'location': (7, 17), 'type': 'numeric' },
-        'transit_routing_number': { 'location': (17, 26), 'type': 'numeric' },
-        'dd_account_number': { 'location': (26, 36), 'type': 'numeric' },
-        'check_number': { 'location': (36, 46), 'type': 'numeric' },
-        'check_date': { 'location': (46, 52), 'type': 'numeric' },
-        'remitter_name': { 'location': (52, 82), 'type': 'alphanumeric' },
-        'payee_name': { 'location': (82, 102), 'type': 'alphanumeric' },
-        'filler': {'location': (102, 104), 'type': 'blank' },
+        'batch_number': { 'location': (1, 4), 'type':  LockboxFieldType.Numeric },
+        'item_number': { 'location': (4, 7), 'type':  LockboxFieldType.Numeric },
+        'check_amount': { 'location': (7, 17), 'type':  LockboxFieldType.Numeric },
+        'transit_routing_number': { 'location': (17, 26), 'type':  LockboxFieldType.Numeric },
+        'dd_account_number': { 'location': (26, 36), 'type':  LockboxFieldType.Numeric },
+        'check_number': { 'location': (36, 46), 'type':  LockboxFieldType.Numeric },
+        'check_date': { 'location': (46, 52), 'type':  LockboxFieldType.Numeric },
+        'remitter_name': { 'location': (52, 82), 'type':  LockboxFieldType.Alphanumeric },
+        'payee_name': { 'location': (82, 102), 'type':  LockboxFieldType.Alphanumeric },
+        'filler': {'location': (102, 104), 'type':  LockboxFieldType.Blank },
     }
 
     def validate(self):
@@ -269,13 +276,13 @@ class LockboxDetailOverflowRecord(LockboxBaseRecord):
     RECORD_TYPE_NUM = 4
 
     fields = {
-        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
-        'item_number': { 'location': (4, 7), 'type': 'numeric' },
-        'overflow_record_type': { 'location': (7, 8), 'type': 'numeric' },
-        'overflow_sequence_number': { 'location': (8, 10), 'type': 'numeric' },
-        'overflow_indicator': { 'location': (10, 11), 'type': 'numeric' },
-        'memo_line': { 'location': (11, 41), 'type': 'alphanumeric' },
-        'filler': {'location': (41, 104), 'type': 'blank' },
+        'batch_number': { 'location': (1, 4), 'type':  LockboxFieldType.Numeric },
+        'item_number': { 'location': (4, 7), 'type':  LockboxFieldType.Numeric },
+        'overflow_record_type': { 'location': (7, 8), 'type':  LockboxFieldType.Numeric },
+        'overflow_sequence_number': { 'location': (8, 10), 'type':  LockboxFieldType.Numeric },
+        'overflow_indicator': { 'location': (10, 11), 'type':  LockboxFieldType.Numeric },
+        'memo_line': { 'location': (11, 41), 'type':  LockboxFieldType.Alphanumeric },
+        'filler': {'location': (41, 104), 'type':  LockboxFieldType.Blank },
     }
 
     def validate(self):
@@ -289,16 +296,16 @@ class LockboxBatchTotalRecord(LockboxBaseRecord):
     RECORD_TYPE_NUM = 7
 
     fields = {
-        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
-        'item_number': { 'location': (4, 7), 'type': 'numeric' },
-        'lockbox_number': { 'location': (7, 14), 'type': 'numeric' },
-        'deposit_date': { 'location': (14, 20), 'type': 'numeric' },
+        'batch_number': { 'location': (1, 4), 'type':  LockboxFieldType.Numeric },
+        'item_number': { 'location': (4, 7), 'type':  LockboxFieldType.Numeric },
+        'lockbox_number': { 'location': (7, 14), 'type':  LockboxFieldType.Numeric },
+        'deposit_date': { 'location': (14, 20), 'type':  LockboxFieldType.Numeric },
         'total_number_remittances': {
             'location': (20, 23),
-            'type': 'numeric'
+            'type':  LockboxFieldType.Numeric
         },
-        'check_dollar_total': { 'location': (23, 33), 'type': 'numeric' },
-        'filler': {'location': (33, 104), 'type': 'blank' },
+        'check_dollar_total': { 'location': (23, 33), 'type':  LockboxFieldType.Numeric },
+        'filler': {'location': (33, 104), 'type':  LockboxFieldType.Blank },
     }
 
     def validate(self):
@@ -313,13 +320,13 @@ class LockboxServiceTotalRecord(LockboxBaseRecord):
     RECORD_TYPE_NUM = 8
 
     fields = {
-        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
-        'item_number': { 'location': (4, 7), 'type': 'numeric' },
-        'lockbox_number': { 'location': (7, 14), 'type': 'numeric' },
-        'deposit_date': { 'location': (14, 20), 'type': 'numeric' },
-        'total_num_checks': { 'location': (20, 24), 'type': 'numeric' },
-        'check_dollar_total': { 'location': (24, 34), 'type': 'numeric' },
-        'filler': {'location': (34, 104), 'type': 'blank' },
+        'batch_number': { 'location': (1, 4), 'type':  LockboxFieldType.Numeric },
+        'item_number': { 'location': (4, 7), 'type':  LockboxFieldType.Numeric },
+        'lockbox_number': { 'location': (7, 14), 'type':  LockboxFieldType.Numeric },
+        'deposit_date': { 'location': (14, 20), 'type':  LockboxFieldType.Numeric },
+        'total_num_checks': { 'location': (20, 24), 'type':  LockboxFieldType.Numeric },
+        'check_dollar_total': { 'location': (24, 34), 'type':  LockboxFieldType.Numeric },
+        'filler': {'location': (34, 104), 'type':  LockboxFieldType.Blank },
     }
 
     def validate(self):
@@ -333,8 +340,8 @@ class LockboxDestinationTrailerRecord(LockboxBaseRecord):
     RECORD_TYPE_NUM = 9
 
     fields = {
-        'total_num_records': { 'location': (1, 7), 'type': 'numeric' },
-        'filler': {'location': (7, 104), 'type': 'blank' },
+        'total_num_records': { 'location': (1, 7), 'type':  LockboxFieldType.Numeric },
+        'filler': {'location': (7, 104), 'type':  LockboxFieldType.Blank },
     }
 
     def validate(self):

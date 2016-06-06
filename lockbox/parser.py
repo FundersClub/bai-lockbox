@@ -42,6 +42,8 @@ class Check(object):
         self.number = detail.check_number
         self.amount = detail.check_amount
         self.memo = detail.memo
+        self.sender_routing_number=detail.transit_routing_number
+        self.sender_account_number=detail.dd_account_number
 
 
 class LockboxDetail(object):
@@ -66,8 +68,8 @@ class LockboxDetail(object):
     def __getattr__(self, attr):
         if attr in dir(self.record):
             return getattr(self.record, attr)
-
-        return self.get(attr)
+        else:
+            return super(LockboxDetail, self).__getattr__(attr)
 
 
 class LockboxBatch(object):
@@ -78,13 +80,8 @@ class LockboxBatch(object):
 
     @property
     def checks(self):
-        checks = []
+        return [Check(d) for d in self.details]
 
-        for detail in self.details:
-            checks.append(Check(detail))
-
-        return checks
-            
     def validate(self):
         if self.summary is None:
             raise LockboxParseError(
@@ -201,7 +198,7 @@ class LockboxFile(object):
         self.destination_trailer_record = None
 
         self.cur_lockbox = None
-    
+
     @property
     def checks(self):
         checks = []
@@ -210,7 +207,7 @@ class LockboxFile(object):
             checks.extend(lockbox.checks)
 
         return checks
-    
+
     def validate(self):
         for lockbox in self.lockboxes:
             lockbox.validate()
@@ -262,51 +259,49 @@ class LockboxFile(object):
         else:
             self.cur_lockbox.add_record(record)
 
+    @classmethod
+    def from_lines(cls, lines):
+        lines = [l.strip() for l in lines]
+        lockbox_file = cls()
 
-def read_lockbox_lines(lines):
-    lockbox_file = LockboxFile()
+        for line_num, line in enumerate(lines, start=1):
+            try:
+                rec_type = int(line[0])
+                record_type_to_constructor = {
+                    LockboxBatchTotalRecord.RECORD_TYPE_NUM: LockboxBatchTotalRecord,
+                    LockboxDestinationTrailerRecord.RECORD_TYPE_NUM: LockboxDestinationTrailerRecord,
+                    LockboxDetailHeader.RECORD_TYPE_NUM: LockboxDetailHeader,
+                    LockboxDetailOverflowRecord.RECORD_TYPE_NUM: LockboxDetailOverflowRecord,
+                    LockboxDetailRecord.RECORD_TYPE_NUM: LockboxDetailRecord,
+                    LockboxImmediateAddressHeader.RECORD_TYPE_NUM: LockboxImmediateAddressHeader,
+                    LockboxServiceRecord.RECORD_TYPE_NUM: LockboxServiceRecord,
+                    LockboxServiceTotalRecord.RECORD_TYPE_NUM: LockboxServiceTotalRecord,
+                }
 
-    for line, line_num in zip(lines, range(1, len(lines)+1)):
-        try:
-            if line[0] == str(LockboxBatchTotalRecord.RECORD_TYPE_NUM):
-                rec = LockboxBatchTotalRecord(line)
-            elif line[0] == str(LockboxDestinationTrailerRecord.RECORD_TYPE_NUM):
-                rec = LockboxDestinationTrailerRecord(line)
-            elif line[0] == str(LockboxDetailHeader.RECORD_TYPE_NUM):
-                rec = LockboxDetailHeader(line)
-            elif line[0] == str(LockboxDetailOverflowRecord.RECORD_TYPE_NUM):
-                rec = LockboxDetailOverflowRecord(line)
-            elif line[0] == str(LockboxDetailRecord.RECORD_TYPE_NUM):
-                rec = LockboxDetailRecord(line)
-            elif line[0] == str(LockboxImmediateAddressHeader.RECORD_TYPE_NUM):
-                rec = LockboxImmediateAddressHeader(line)
-            elif line[0] == str(LockboxServiceRecord.RECORD_TYPE_NUM):
-                rec = LockboxServiceRecord(line)
-            elif line[0] == str(LockboxServiceTotalRecord.RECORD_TYPE_NUM):
-                rec = LockboxServiceTotalRecord(line)
-            else:
-                raise LockboxParseError(
-                    'unknown record type {}'.format(line[0])
+                if rec_type not in record_type_to_constructor:
+                    raise LockboxParseError(
+                        'unknown record type {}'.format(rec_type)
+                    )
+
+                rec = record_type_to_constructor[rec_type](line)
+                lockbox_file.add_record(rec)
+            except Exception as e:
+                if not isinstance(e, LockboxError):
+                    raise
+
+                # if this is some lockbox-related exception,create a new
+                # exception of the same kind we caught, bet prepend the
+                # current line number to it so we know where to look while
+                # troubleshooting
+                six.reraise(
+                    type(e),
+                    'Line {}: {} ("{}")'.format(line_num, str(e), line),
+                    sys.exc_info()[2]
                 )
 
-            lockbox_file.add_record(rec)
-        except Exception as e:
-            if not isinstance(e, LockboxError):
-                raise
+        lockbox_file.validate()
+        return lockbox_file
 
-            # if this is some lockbox-related exception,create a new
-            # exception of the same kind we caught, bet prepend the
-            # current line number to it so we know where to look while
-            # troubleshooting
-            six.reraise(
-                type(e),
-                'Line {}: {} ("{}")'.format(line_num, str(e), line),
-                sys.exc_info()[2]
-            )
-
-    lockbox_file.validate()
-    return lockbox_file
-
-
-def read_lockbox_file(inf):
-    return read_lockbox_lines([line.strip() for line in inf.readlines()])
+    @classmethod
+    def from_file(cls, inf):
+        return LockboxFile.from_lines(inf.readlines())

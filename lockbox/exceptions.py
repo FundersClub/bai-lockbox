@@ -29,7 +29,7 @@ class LockboxParseError(LockboxError):
     '''Base exception for problems related to reading a BAI Lockbox
     record.
     '''
-    raw_line = ''
+    pass
 
 
 class LockboxConsistencyError(LockboxError):

@@ -19,7 +19,7 @@ import os
 
 from unittest import TestCase
 
-from lockbox.parser import read_lockbox_file, read_lockbox_lines
+from lockbox.parser import LockboxFile
 
 
 class TestLockboxParser(TestCase):
@@ -42,7 +42,7 @@ class TestLockboxParser(TestCase):
         self.empty_lockbox_lines = [l.strip() for l in open(empty_lockbox_path, 'r').readlines()]
 
     def test_parsing_valid_file(self):
-        lockbox_file = read_lockbox_lines(self.valid_lockbox_lines)
+        lockbox_file = LockboxFile.from_lines(self.valid_lockbox_lines)
 
         self.assertEqual(len(lockbox_file.checks), 1)
 
@@ -55,6 +55,6 @@ class TestLockboxParser(TestCase):
         self.assertEqual(check.memo, 'CE554')
 
     def test_parsing_file_with_no_checks(self):
-        lockbox_file = read_lockbox_lines(self.empty_lockbox_lines)
+        lockbox_file = LockboxFile.from_lines(self.empty_lockbox_lines)
 
         self.assertEqual(len(lockbox_file.checks), 0)
