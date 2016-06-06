@@ -1,0 +1,341 @@
+# This file is part of bai-lockbox.
+
+# bai-lockbox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# bai-lockbox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+
+# You should have received a copy of the GNU Lesser General Public
+# License along with bai-lockbox.  If not, see
+# <http://www.gnu.org/licenses/>.
+
+import datetime
+import re
+
+from .exceptions import LockboxDefinitionError, LockboxParseError
+
+
+class LockboxBaseRecord(object):
+    '''The format of the field 'fields' should be an array of dicts like
+    this:
+
+    { 'field_name': { 'location': (start_col, end_col),
+                      'type': 'type as string'
+                    }
+      ...
+    }
+
+    Valid types: 'alphanumeric', 'numeric', 'blank'
+
+    Note: The record type which is determined by first character of a
+    line is defined by setting MAX_RECORD_LENGTH in a derrived class
+    rather than by adding it to the 'fields' field.
+    '''
+
+    MAX_RECORD_LENGTH = 104
+
+    RECORD_TYPE_NUM = None
+
+    raw_record_text = ''
+    children = []
+
+    def __init__(self, raw_record_text):
+        if len(raw_record_text) > self.MAX_RECORD_LENGTH:
+            raise LockboxParseError(
+                'record longer than {}'.format(self.MAX_RECORD_LENGTH)
+            )
+
+        self.raw_record_text = raw_record_text
+
+        if hasattr(self, 'fields'):
+            # we can only parse if there are actually fields defined
+            self.fields['record_type'] = {
+                'location': (0,1),
+                'type': 'numeric',
+            }
+            self._parse()
+
+            if hasattr(self, 'validate'):
+                self.validate()
+
+            # all of the basic type checking (alphanumeric vs numeric)
+            # has already been performed by the regexps in _parse(),
+            # so at this point we just create any missing fields by
+            # doing self.my_field = self._my_field_raw
+            for field_name, field_def in self.fields.items():
+                if hasattr(self, field_name):
+                    continue
+
+                raw_field_name = '_{}_raw'.format(field_name)
+
+                raw_field_val = (
+                    None
+                    if field_def['type'] == 'blank'
+                    else getattr(self, raw_field_name, None)
+                )
+
+                setattr(self, field_name, raw_field_val)
+
+    def _parse(self):
+        for field_name, field_def in self.fields.items():
+            raw_field_name = '_{}_raw'.format(field_name)
+            if hasattr(self, field_name):
+                raise AttributeError(
+                    'LockboxRecord already has field "{}"'.format(
+                        field_name,
+                    )
+                )
+
+            start_col = field_def['location'][0]
+            end_col = field_def['location'][1]
+            raw_field = self.raw_record_text[start_col:end_col]
+
+            if field_def['type'] == 'alphanumeric':
+                patt = re.compile(r'^[ A-Z0-9]+$')
+            elif field_def['type'] == 'numeric':
+                patt = re.compile(r'^[0-9]+$')
+            elif field_def['type'] == 'blank':
+                patt = re.compile(r'^\s*$')
+            else:
+                raise LockboxDefinitionError(
+                    'invalid field type found: "{}"'.format(field_def['type'])
+                )
+
+            if not patt.match(raw_field):
+                raise LockboxParseError(
+                    'field {} does not match expected type {}'.format(
+                        field_name,
+                        field_def['type'],
+                    )
+                )
+
+            setattr(self, raw_field_name, raw_field)
+
+    def _parse_as_date(self, field_name, mmddyy=False):
+        raw_field_name = '_{}_raw'.format(field_name)
+
+        if not hasattr(self, raw_field_name):
+            raise AttributeError("'{}' has no field '{}'".format(
+                self.__class__.__name__,
+                field_name
+            ))
+
+        try:
+            field_val = getattr(self, raw_field_name)
+            if len(field_val) != 6:
+                raise ValueError()
+
+            if not mmddyy:
+                parsed_date = datetime.date(
+                    # format of the (raw) field is YYMMDD
+                    int(field_val[0:2]) + 2000,
+                    int(field_val[2:4]),
+                    int(field_val[4:6]),
+                )
+            else:
+                parsed_date = datetime.date(
+                    # format of the (raw) field is MMDDYY
+                    int(field_val[4:6]) + 2000,
+                    int(field_val[0:2]),
+                    int(field_val[2:4]),
+                )
+        except ValueError:
+            raise LockboxDefinitionError(
+                '{} is not a valid YYMMDD-formatted date'.format(
+                    field_val,
+                )
+            )
+
+        return parsed_date
+
+    def _parse_as_time(self, field_name):
+        raw_field_name = '_{}_raw'.format(field_name)
+
+        if not hasattr(self, raw_field_name):
+            raise AttributeError("'{}' has no field '{}'".format(
+                self.__class__.__name__,
+                field_name
+            ))
+
+        try:
+            field_val = getattr(self, raw_field_name)
+            if len(field_val) != 4:
+                raise ValueError()
+
+            parsed_time = datetime.time(
+                # format of the (raw) field is HHMM
+                int(field_val[0:2]),
+                int(field_val[2:4]),
+            )
+        except ValueError:
+            raise LockboxDefinitionError(
+                '{} is not a valid HHMM formatted date'.format(
+                    field_val,
+                )
+            )
+
+        return parsed_time
+
+
+class LockboxImmediateAddressHeader(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 1
+
+    fields = {
+        'priority_code': { 'location': (1, 3), 'type': 'numeric' },
+        'destination_id': { 'location': (3, 13), 'type': 'alphanumeric' },
+        'originating_trn': { 'location': (13, 23), 'type': 'numeric' },
+        'processing_date': { 'location': (23, 29), 'type': 'numeric' },
+        'processing_time': { 'location': (29, 33), 'type': 'numeric' },
+        'filler': {'location': (33, 104), 'type': 'blank' },
+    }
+
+    def validate(self):
+        self.processing_date = self._parse_as_date('processing_date')
+        self.processing_time = self._parse_as_time('processing_time')
+
+
+class LockboxServiceRecord(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 2
+
+    fields = {
+        'ultimate_dest_and_origin': {
+            'location': (1, 21),
+            'type': 'alphanumeric',
+        },
+        'ref_code':  {'location': (21, 31), 'type': 'numeric'},
+        'service_type': {'location': (31, 34), 'type': 'numeric'},
+        'record_size': {'location': (34, 37), 'type': 'numeric'},
+        'blocking_factor': {'location': (37, 41), 'type': 'numeric'},
+        'format_code': {'location': (41,42), 'type': 'numeric'},
+        'filler': {'location': (42, 104), 'type': 'blank'},
+    }
+
+
+class LockboxDetailHeader(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 5
+
+    fields = {
+        'batch_number':  { 'location': (1, 4), 'type': 'numeric' },
+        'ref_code':  { 'location': (4, 7, ), 'type': 'numeric' },
+        'lockbox_number':  { 'location': (7, 14), 'type': 'numeric' },
+        'deposit_date':  { 'location': (14, 20), 'type': 'numeric' },
+        'ultimate_dest_and_origin':  {
+            'location': (20, 40),
+            'type': 'alphanumeric',
+        },
+        'filler': {'location': (40, 104), 'type': 'blank' },
+    }
+
+    def validate(self):
+        self.batch_number = int(self._batch_number_raw)
+        self.deposit_date = self._parse_as_date('deposit_date')
+
+class LockboxDetailRecord(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 6
+
+    fields = {
+        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
+        'item_number': { 'location': (4, 7), 'type': 'numeric' },
+        'check_amount': { 'location': (7, 17), 'type': 'numeric' },
+        'transit_routing_number': { 'location': (17, 26), 'type': 'numeric' },
+        'dd_account_number': { 'location': (26, 36), 'type': 'numeric' },
+        'check_number': { 'location': (36, 46), 'type': 'numeric' },
+        'check_date': { 'location': (46, 52), 'type': 'numeric' },
+        'remitter_name': { 'location': (52, 82), 'type': 'alphanumeric' },
+        'payee_name': { 'location': (82, 102), 'type': 'alphanumeric' },
+        'filler': {'location': (102, 104), 'type': 'blank' },
+    }
+
+    def validate(self):
+        self.batch_number = int(self._batch_number_raw)
+        self.item_number = int(self._item_number_raw)
+
+        self.check_amount = int(self._check_amount_raw) / 100.00
+        self.check_number = int(self._check_number_raw)
+        # for some reason check_date is stored in MMDDYY format instead of the
+        # otherwise standard YYMMDD
+        self.check_date = self._parse_as_date('check_date', mmddyy=True)
+
+        self.remitter_name = self._remitter_name_raw.strip()
+        self.payee_name = self._payee_name_raw.strip()
+
+
+class LockboxDetailOverflowRecord(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 4
+
+    fields = {
+        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
+        'item_number': { 'location': (4, 7), 'type': 'numeric' },
+        'overflow_record_type': { 'location': (7, 8), 'type': 'numeric' },
+        'overflow_sequence_number': { 'location': (8, 10), 'type': 'numeric' },
+        'overflow_indicator': { 'location': (10, 11), 'type': 'numeric' },
+        'memo_line': { 'location': (11, 41), 'type': 'alphanumeric' },
+        'filler': {'location': (41, 104), 'type': 'blank' },
+    }
+
+    def validate(self):
+        self.batch_number = int(self._batch_number_raw)
+        self.item_number = int(self._item_number_raw)
+        self.overflow_record_type = int(self._overflow_record_type_raw)
+        self.overflow_sequence_number = int(self._overflow_sequence_number_raw)
+
+
+class LockboxBatchTotalRecord(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 7
+
+    fields = {
+        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
+        'item_number': { 'location': (4, 7), 'type': 'numeric' },
+        'lockbox_number': { 'location': (7, 14), 'type': 'numeric' },
+        'deposit_date': { 'location': (14, 20), 'type': 'numeric' },
+        'total_number_remittances': {
+            'location': (20, 23),
+            'type': 'numeric'
+        },
+        'check_dollar_total': { 'location': (23, 33), 'type': 'numeric' },
+        'filler': {'location': (33, 104), 'type': 'blank' },
+    }
+
+    def validate(self):
+        self.batch_number = int(self._batch_number_raw)
+        self.item_number = int(self._item_number_raw)
+        self.deposit_date = self._parse_as_date('deposit_date')
+        self.total_number_remittances = int(self._total_number_remittances_raw)
+        self.check_dollar_total = int(self._check_dollar_total_raw) / 100.0
+
+
+class LockboxServiceTotalRecord(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 8
+
+    fields = {
+        'batch_number': { 'location': (1, 4), 'type': 'numeric' },
+        'item_number': { 'location': (4, 7), 'type': 'numeric' },
+        'lockbox_number': { 'location': (7, 14), 'type': 'numeric' },
+        'deposit_date': { 'location': (14, 20), 'type': 'numeric' },
+        'total_num_checks': { 'location': (20, 24), 'type': 'numeric' },
+        'check_dollar_total': { 'location': (24, 34), 'type': 'numeric' },
+        'filler': {'location': (34, 104), 'type': 'blank' },
+    }
+
+    def validate(self):
+        self.batch_number = int(self._batch_number_raw)
+        self.item_number = int(self._item_number_raw)
+        self.deposit_date = self._parse_as_date('deposit_date')
+        self.total_num_checks = int(self._total_num_checks_raw)
+        self.check_dollar_total = int(self._check_dollar_total_raw) / 100.0
+
+class LockboxDestinationTrailerRecord(LockboxBaseRecord):
+    RECORD_TYPE_NUM = 9
+
+    fields = {
+        'total_num_records': { 'location': (1, 7), 'type': 'numeric' },
+        'filler': {'location': (7, 104), 'type': 'blank' },
+    }
+
+    def validate(self):
+        self.total_num_records = int(self._total_num_records_raw)

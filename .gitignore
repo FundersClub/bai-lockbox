@@ -1,0 +1,18 @@
+# -*- mode: gitignore; -*-
+
+# emacs files to ignore
+*~
+\#*\#
+.\#*
+*_flymake.*
+.projectile
+
+# python files to ignore
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.tox/
+.coverage*
+cover/
