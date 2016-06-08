@@ -9,15 +9,13 @@ setup(
     version='0.0.1',
     packages=find_packages(exclude=['docs', 'tests']),
     install_requires=[
-        'django-jsonfield>=0.8.11',
         'six',
-        'django-apptemplates',
     ],
     test_suite='nose.collector',
     tests_require=['nose', 'coverage'],
     include_package_data=True,
-    license='LGPLv3',
-    description='An elegant solution for keeping a relational log of chronological events in a Django application.',
+    license='Apache License 2.0',
+    description='A library for parsing files in the BAI lockbox format.',
     url='https://www.github.com/FundersClub/bai-lockbox',
     author='Jon Friedman / FundersClub Inc.',
     author_email='jon@fundersclub.com',
@@ -27,8 +25,8 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
-        'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
+        'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
-    'Intended Audience :: Financial and Insurance Industry'
+        'Intended Audience :: Financial and Insurance Industry'
     ],
 )

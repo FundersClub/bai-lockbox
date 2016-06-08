@@ -1,25 +1,9 @@
-# This file is part of bai-lockbox.
-
-# bai-lockbox is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-
-# bai-lockbox is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-
-# You should have received a copy of the GNU Lesser General Public
-# License along with bai-lockbox.  If not, see
-# <http://www.gnu.org/licenses/>.
-
 import datetime
 import os
 
 from unittest import TestCase
 
-from lockbox.parser import read_lockbox_file, read_lockbox_lines
+from lockbox.parser import LockboxFile
 
 
 class TestLockboxParser(TestCase):
@@ -42,7 +26,7 @@ class TestLockboxParser(TestCase):
         self.empty_lockbox_lines = [l.strip() for l in open(empty_lockbox_path, 'r').readlines()]
 
     def test_parsing_valid_file(self):
-        lockbox_file = read_lockbox_lines(self.valid_lockbox_lines)
+        lockbox_file = LockboxFile.from_lines(self.valid_lockbox_lines)
 
         self.assertEqual(len(lockbox_file.checks), 1)
 
@@ -55,6 +39,6 @@ class TestLockboxParser(TestCase):
         self.assertEqual(check.memo, 'CE554')
 
     def test_parsing_file_with_no_checks(self):
-        lockbox_file = read_lockbox_lines(self.empty_lockbox_lines)
+        lockbox_file = LockboxFile.from_lines(self.empty_lockbox_lines)
 
         self.assertEqual(len(lockbox_file.checks), 0)
