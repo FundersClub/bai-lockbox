@@ -138,3 +138,8 @@ class TestRecordDefinitions(TestCase):
         rec = LockboxDestinationTrailerRecord('9000008')
 
         self.assertEqual(rec._total_num_records_raw, '000008')
+
+    def test_memo_line_with_valid_nonalpha_char(self):
+        rec = LockboxDetailOverflowRecord('40010016019(BLAH:)')
+
+        self.assertEqual(rec._memo_line_raw, '(BLAH:)')
