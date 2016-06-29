@@ -17,5 +17,6 @@ __pycache__/
 .tox/
 .coverage*
 cover/
+docs/build/
 build/
 dist/
