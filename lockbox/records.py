@@ -5,7 +5,18 @@ import six
 from .exceptions import LockboxDefinitionError, LockboxParseError
 
 
+'''
+All of the lockbox record definition
+'''
+
+
 class LockboxFieldType(object):
+    '''The three possible field types available are ``Numeric``, which is
+    means the field contains only numeric characters, ``Alphanumeric``
+    which actually means all alphanumeric characters as well as
+    ``;:,./()-``.
+
+    '''
     Numeric = 'numeric'
     Alphanumeric = 'alphanumeric'
     Blank = 'blank'
