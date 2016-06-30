@@ -51,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'bai-lockbox'
-copyright = u'2016, Jon Friedman'
+copyright = u'2016, Jon Friedman and FundersClub, Inc.'
 author = u'Jon Friedman'
 
 # The version info for the project you're documenting, acts as replacement for

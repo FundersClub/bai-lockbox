@@ -1,13 +1,19 @@
+# -*- coding: utf-8 -*-
+
+'''
+lockbox.records
+---------------
+
+This module contains the definitions of the different types of BAI
+lockbox records.
+
+'''
+
 import datetime
 import re
 import six
 
 from .exceptions import LockboxDefinitionError, LockboxParseError
-
-
-'''
-All of the lockbox record definition
-'''
 
 
 class LockboxFieldType(object):
@@ -16,6 +22,8 @@ class LockboxFieldType(object):
     which actually means all alphanumeric characters as well as
     ``;:,./()-``.
 
+    .. note:: This class isn't meant to be instantiated, but rather like
+              an enum.
     '''
     Numeric = 'numeric'
     Alphanumeric = 'alphanumeric'
@@ -23,22 +31,11 @@ class LockboxFieldType(object):
 
 
 class LockboxBaseRecord(object):
-    '''The format of the field 'fields' should be an array of dicts like
-    this:
+    # Valid types are listed inside the LockboxFieldType class.
 
-    { 'field_name': { 'location': (start_col, end_col),
-                      'type': 'type as string'
-                    }
-      ...
-    }
-
-    Valid types are listed inside the LockboxFieldType class.
-
-    Note: The record type which is determined by first character of a
-    line is defined by setting MAX_RECORD_LENGTH in a derrived class
-    rather than by adding it to the 'fields' field.
-
-    '''
+    # Note: The record type which is determined by first character of
+    # a line is defined by setting MAX_RECORD_LENGTH in a derrived
+    # class rather than by adding it to the 'fields' field.
 
     MAX_RECORD_LENGTH = 104
 

@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+
+'''
+lockbox.parser
+--------------
+
+This module contains all of the objects and logic required to parse a
+BAI lockbox file into its constituent records.
+
+'''
+
 import six
 import sys
 
@@ -19,6 +30,21 @@ from .records import (
 )
 
 class Check(object):
+    '''The :class:`Check` object holds all of the actual information
+    about a check. Specifically, it has the following fields:
+
+    * ``sender``  - the name of the sender of the check
+    * ``recipient`` - the name of the recipient of the check
+    * ``date`` - the day of the
+    * ``number`` - the check number
+    * ``amount`` - the total amount of the check, as a :class:`float`
+    * ``memo`` - the text of the check's memo, `None` if there isn't one
+    * ``sender_routing_number`` - the bank routing number of the account
+      the check originated from
+    * ``sender_account_number`` - the bank account number of the account
+      the check originated from
+
+    '''
     def __init__(self, detail):
         self.sender = detail.remitter_name
         self.recipient = detail.payee_name
@@ -26,8 +52,8 @@ class Check(object):
         self.number = detail.check_number
         self.amount = detail.check_amount
         self.memo = detail.memo
-        self.sender_routing_number=detail.transit_routing_number
-        self.sender_account_number=detail.dd_account_number
+        self.sender_routing_number = detail.transit_routing_number
+        self.sender_account_number = detail.dd_account_number
 
 
 class LockboxDetail(object):
@@ -175,6 +201,14 @@ class Lockbox(object):
 
 
 class LockboxFile(object):
+    '''A :class:`~lockbox.parser.LockboxFile` is a representation of an
+    actual BAI lockbox file.
+
+    .. warning:: Don't use the normal constructor to instantiate one
+                 of these. Use
+                 :func:`~lockbox.parser.LockboxFile.from_file`,
+                 instead.
+    '''
     def __init__(self):
         self.lockboxes = []
         self.header_record = None
@@ -185,6 +219,9 @@ class LockboxFile(object):
 
     @property
     def checks(self):
+        '''
+        A list of all :class:`Check` objects contained in the :class:`LockboxFile`.
+        '''
         checks = []
 
         for lockbox in self.lockboxes:
@@ -288,4 +325,11 @@ class LockboxFile(object):
 
     @classmethod
     def from_file(cls, inf):
+        '''
+        Create a new :class:`~lockbox.parser.LockboxFile` object from the
+        contents of a file.
+
+        :param inf: A :class:`File`-like object.
+
+        '''
         return LockboxFile.from_lines(inf.readlines())

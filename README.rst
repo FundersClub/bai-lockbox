@@ -27,14 +27,14 @@ Usage
 
 .. code-block:: python
 
-    from lockbox import parse_lockbox_file
-    lockbox_file = parse_lockbox_file('/path/to/lockbox.bai')
+    from lockbox.parser import LockboxFile
+    with open('/path/to/file', 'r') as inf:
+        lockbox_file = LockboxFile.from_file(inf)
 
     for check in lockbox_file.checks:
         print('Received ${} from {} on {}'.format(
             check.amount, check.sender, check.date
         ))
-
 
 More information can be gathered by looking through the code and reading the
 documentation which will be available soon.
