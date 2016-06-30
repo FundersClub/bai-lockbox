@@ -41,4 +41,4 @@ More information can be found in the docs which can be build from source::
   $ cd path/to/bai-lockbox/docs
   $ make html
 
-or by going to the `ReadTheDocs page <bai-lockbox.readthedocs.org>`_.
+or by going to the `documentation page <fundersclub.github.io/bai-lockbox>`_.
