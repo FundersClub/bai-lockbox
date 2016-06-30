@@ -10,7 +10,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 
 setup(
     name='bai-lockbox',
-    version='0.0.1',
+    version='0.0.2',
     packages=find_packages(exclude=['docs', 'tests']),
     install_requires=[
         'six',
