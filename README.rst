@@ -27,8 +27,9 @@ Usage
 
 .. code-block:: python
 
-    from lockbox import parse_lockbox_file
-    lockbox_file = parse_lockbox_file('/path/to/lockbox.bai')
+    from lockbox import LockboxFile
+    with open('/path/to/lockbox.bai', 'r') as in_file:
+        lockbox_file = LockboxFile.from_file(in_file)
 
     for check in lockbox_file.checks:
         print('Received ${} from {} on {}'.format(
