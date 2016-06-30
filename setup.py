@@ -4,6 +4,10 @@ from setuptools import find_packages, setup
 
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
+with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
+    README = readme.read()
+
+
 setup(
     name='bai-lockbox',
     version='0.0.1',
@@ -16,11 +20,12 @@ setup(
     include_package_data=True,
     license='Apache License 2.0',
     description='A library for parsing files in the BAI lockbox format.',
+    long_description=README,
     url='https://www.github.com/FundersClub/bai-lockbox',
     author='Jon Friedman / FundersClub Inc.',
     author_email='jon@fundersclub.com',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
