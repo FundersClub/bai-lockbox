@@ -246,8 +246,7 @@ class LockboxDetailRecord(LockboxBaseRecord):
         'check_number': { 'location': (36, 46), 'type':  LockboxFieldType.Numeric },
         'check_date': { 'location': (46, 52), 'type':  LockboxFieldType.Numeric },
         'remitter_name': { 'location': (52, 82), 'type':  LockboxFieldType.Alphanumeric },
-        'payee_name': { 'location': (82, 102), 'type':  LockboxFieldType.Alphanumeric },
-        'filler': {'location': (102, 104), 'type':  LockboxFieldType.Blank },
+        'payee_name': { 'location': (82, 160), 'type':  LockboxFieldType.Alphanumeric },
     }
 
     def validate(self):
