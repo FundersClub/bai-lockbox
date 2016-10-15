@@ -17,9 +17,9 @@ from lockbox.records import (
 class TestRecordDefinitions(TestCase):
     def test_overlong_record(self):
         with self.assertRaises(LockboxParseError) as cm:
-            LockboxImmediateAddressHeader(' ' * 105)
+            LockboxImmediateAddressHeader(' ' * 161)
 
-        self.assertIn('record longer than 104', str(cm.exception))
+        self.assertIn('record longer than 160', str(cm.exception))
 
     def test_invalid_numeric_field(self):
         with self.assertRaises(LockboxParseError) as cm:

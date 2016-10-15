@@ -37,7 +37,9 @@ class LockboxBaseRecord(object):
     # a line is defined by setting MAX_RECORD_LENGTH in a derrived
     # class rather than by adding it to the 'fields' field.
 
-    MAX_RECORD_LENGTH = 104
+    # Officially this should be 104 but we've already gotten lines
+    # longer than that
+    MAX_RECORD_LENGTH = 160
 
     RECORD_TYPE_NUM = None
 
