@@ -285,19 +285,20 @@ class LockboxFile(object):
         lines = [l.strip() for l in lines]
         lockbox_file = cls()
 
+        record_type_to_constructor = {
+            LockboxBatchTotalRecord.RECORD_TYPE_NUM: LockboxBatchTotalRecord,
+            LockboxDestinationTrailerRecord.RECORD_TYPE_NUM: LockboxDestinationTrailerRecord,
+            LockboxDetailHeader.RECORD_TYPE_NUM: LockboxDetailHeader,
+            LockboxDetailOverflowRecord.RECORD_TYPE_NUM: LockboxDetailOverflowRecord,
+            LockboxDetailRecord.RECORD_TYPE_NUM: LockboxDetailRecord,
+            LockboxImmediateAddressHeader.RECORD_TYPE_NUM: LockboxImmediateAddressHeader,
+            LockboxServiceRecord.RECORD_TYPE_NUM: LockboxServiceRecord,
+            LockboxServiceTotalRecord.RECORD_TYPE_NUM: LockboxServiceTotalRecord,
+        }
+
         for line_num, line in enumerate(lines, start=1):
             try:
                 rec_type = int(line[0])
-                record_type_to_constructor = {
-                    LockboxBatchTotalRecord.RECORD_TYPE_NUM: LockboxBatchTotalRecord,
-                    LockboxDestinationTrailerRecord.RECORD_TYPE_NUM: LockboxDestinationTrailerRecord,
-                    LockboxDetailHeader.RECORD_TYPE_NUM: LockboxDetailHeader,
-                    LockboxDetailOverflowRecord.RECORD_TYPE_NUM: LockboxDetailOverflowRecord,
-                    LockboxDetailRecord.RECORD_TYPE_NUM: LockboxDetailRecord,
-                    LockboxImmediateAddressHeader.RECORD_TYPE_NUM: LockboxImmediateAddressHeader,
-                    LockboxServiceRecord.RECORD_TYPE_NUM: LockboxServiceRecord,
-                    LockboxServiceTotalRecord.RECORD_TYPE_NUM: LockboxServiceTotalRecord,
-                }
 
                 if rec_type not in record_type_to_constructor:
                     raise LockboxParseError(

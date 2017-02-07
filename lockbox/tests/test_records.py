@@ -143,3 +143,8 @@ class TestRecordDefinitions(TestCase):
         rec = LockboxDetailOverflowRecord('40010016019(BLAH:)')
 
         self.assertEqual(rec._memo_line_raw, '(BLAH:)')
+
+    def test_blank_memo_line(self):
+        rec = LockboxDetailOverflowRecord('40010016019')
+
+        self.assertEqual(rec._memo_line_raw, '')

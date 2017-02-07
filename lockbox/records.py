@@ -28,6 +28,7 @@ class LockboxFieldType(object):
     Numeric = 'numeric'
     Alphanumeric = 'alphanumeric'
     Blank = 'blank'
+    AlphanumericOrBlank = 'alphanumericorblank'
 
 
 class LockboxBaseRecord(object):
@@ -102,6 +103,8 @@ class LockboxBaseRecord(object):
                 patt = re.compile(r'^[0-9]+$')
             elif field_def['type'] ==  LockboxFieldType.Blank:
                 patt = re.compile(r'^\s*$')
+            elif field_def['type'] ==  LockboxFieldType.AlphanumericOrBlank:
+                patt = re.compile(r'^$|^[ A-Z0-9;:,./()-]+$')
             else:
                 raise LockboxDefinitionError(
                     'invalid field type found: "{}"'.format(field_def['type'])
@@ -236,6 +239,7 @@ class LockboxDetailHeader(LockboxBaseRecord):
         self.batch_number = int(self._batch_number_raw)
         self.deposit_date = self._parse_as_date('deposit_date')
 
+
 class LockboxDetailRecord(LockboxBaseRecord):
     RECORD_TYPE_NUM = 6
 
@@ -274,7 +278,7 @@ class LockboxDetailOverflowRecord(LockboxBaseRecord):
         'overflow_record_type': { 'location': (7, 8), 'type':  LockboxFieldType.Numeric },
         'overflow_sequence_number': { 'location': (8, 10), 'type':  LockboxFieldType.Numeric },
         'overflow_indicator': { 'location': (10, 11), 'type':  LockboxFieldType.Numeric },
-        'memo_line': { 'location': (11, 41), 'type':  LockboxFieldType.Alphanumeric },
+        'memo_line': { 'location': (11, 41), 'type':  LockboxFieldType.AlphanumericOrBlank },
         'filler': {'location': (41, 104), 'type':  LockboxFieldType.Blank },
     }
 
