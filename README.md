@@ -42,3 +42,6 @@ More information can be found in the docs which can be build from source:
 $ cd path/to/bai-lockbox/docs
 $ make html
 ```
+
+Maintained by [Jonathan Friedman @moofive](https://www.github.com/moofive/)
+
