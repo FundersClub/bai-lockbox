@@ -4,13 +4,13 @@ from setuptools import find_packages, setup
 
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
+with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
 
 
 setup(
     name='bai-lockbox',
-    version='0.0.5',
+    version='0.0.6',
     packages=find_packages(exclude=['docs', 'tests']),
     install_requires=[
         'six',
@@ -29,7 +29,8 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
         'Intended Audience :: Financial and Insurance Industry'

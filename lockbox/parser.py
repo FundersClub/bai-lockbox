@@ -311,14 +311,11 @@ class LockboxFile(object):
                 if not isinstance(e, LockboxError):
                     raise
 
-                # if this is some lockbox-related exception,create a new
-                # exception of the same kind we caught, bet prepend the
-                # current line number to it so we know where to look while
-                # troubleshooting
-                six.reraise(
-                    type(e),
-                    'Line {}: {} ("{}")'.format(line_num, str(e), line),
-                    sys.exc_info()[2]
+                # if this is some lockbox-related exception,  wrap it in an exception that points
+                # to the problematic line.
+                six.raise_from(
+                    LockboxParseError('Error parsing Line {}: {} ("{}")'.format(line_num, str(e), line)),
+                    e
                 )
 
         lockbox_file.validate()
