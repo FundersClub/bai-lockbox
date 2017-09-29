@@ -98,13 +98,13 @@ class LockboxBaseRecord(object):
             raw_field = self.raw_record_text[start_col:end_col]
 
             if field_def['type'] ==  LockboxFieldType.Alphanumeric:
-                patt = re.compile(r'^[ A-Z0-9;:,./()-]+$')
+                patt = re.compile(r'''^[ A-Z0-9;:,'./()-]+$''')
             elif field_def['type'] ==  LockboxFieldType.Numeric:
                 patt = re.compile(r'^[0-9]+$')
             elif field_def['type'] ==  LockboxFieldType.Blank:
                 patt = re.compile(r'^\s*$')
             elif field_def['type'] ==  LockboxFieldType.AlphanumericOrBlank:
-                patt = re.compile(r'^$|^[ A-Z0-9;:,./()-]+$')
+                patt = re.compile(r'''^$|^[ A-Z0-9;:',./()-]+$''')
             else:
                 raise LockboxDefinitionError(
                     'invalid field type found: "{}"'.format(field_def['type'])
